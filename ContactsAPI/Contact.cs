@@ -6,14 +6,13 @@ namespace ContactsAPI
     {
         public int Id { get; set; }
 
-        [StringLength(20)]
+        [StringLength(maximumLength: 250, MinimumLength = 2)]
+        [Required]
         public string Name { get; set; } = String.Empty;
 
-        [StringLength(20)]
-        public string Phone { get; set; } = String.Empty;
+        [RegularExpression(@"^\d{9}$")]
+        [Required]
+        public int Phone { get; set; }
 
-        public int TypeId { get; set; }
-
-        public ContactType? TypeName { get; set; }
     }
 }
