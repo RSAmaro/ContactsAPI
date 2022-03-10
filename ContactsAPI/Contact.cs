@@ -6,7 +6,7 @@ namespace ContactsAPI
     {
         public int Id { get; set; }
 
-        [StringLength(maximumLength: 250, MinimumLength = 2)]
+        [StringLength(20, MinimumLength = 2)]
         [Required]
         public string Name { get; set; } = String.Empty;
 

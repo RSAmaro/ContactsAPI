@@ -8,6 +8,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ContactsAPI;
 using ContactsAPI.Data;
+using ContactsAPI.Pagination;
+using ContactsAPI.Dto;
+using System.Text.Json;
 
 namespace ContactsAPI.Controllers
 {
@@ -41,6 +44,36 @@ namespace ContactsAPI.Controllers
             }
 
             return contact;
+        }
+
+        // GET: api/Contacts/Page
+        [HttpGet("List")]
+        public async Task<IActionResult> Get([FromQuery] PaginationParams @params)
+        {
+            var contacts = _context.Contacts.OrderBy(p => p.Id);
+
+            if (@params.Qry != null)         
+                contacts = _context.Contacts.Where(p => p.Name.Contains(@params.Qry)).OrderBy(p => p.Id);
+
+            if (contacts == null)
+            {
+                return NotFound();
+            }
+
+            var paginationMetadata = new PaginationMetadata(contacts.Count(), @params.Page, @params.ItemsPerPage);
+            Response.Headers.Add("X-Pagination", JsonSerializer.Serialize(paginationMetadata));
+
+            var items = await contacts.Skip((@params.Page - 1) * @params.ItemsPerPage)
+                                      .Take(@params.ItemsPerPage)
+                                      .ToListAsync();
+                            
+            return Ok(items.Select(e => new ContactDTO
+            {
+                Id = e.Id,
+                Name = e.Name,
+                Phone = e.Phone
+            }
+            ));
         }
 
         // PUT: api/Contacts/5
