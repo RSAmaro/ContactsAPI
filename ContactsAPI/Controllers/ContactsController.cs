@@ -46,7 +46,7 @@ namespace ContactsAPI.Controllers
             return contact;
         }
 
-        // GET: api/Contacts/Page
+        // GET: api/Contacts/List
         [HttpGet("List")]
         public async Task<IActionResult> Get([FromQuery] PaginationParams @params)
         {
