@@ -50,30 +50,43 @@ namespace ContactsAPI.Controllers
         [HttpGet("List")]
         public async Task<IActionResult> Get([FromQuery] PaginationParams @params)
         {
-            var contacts = _context.Contacts.OrderBy(p => p.Id);
+            try
+            {
+            IOrderedQueryable<Contact> contacts;
+
+            if ( (@params.Page < 1) || (@params.ItemsPerPage < 1) )
+                return ValidationProblem("Verifique os campos Page e ItemsPerPage!");
 
             if (@params.Qry != null)         
                 contacts = _context.Contacts.Where(p => p.Name.Contains(@params.Qry)).OrderBy(p => p.Id);
+            else 
+                contacts = _context.Contacts.OrderBy(p => p.Id);
 
             if (contacts == null)
-            {
                 return NotFound();
-            }
+            
 
-            var paginationMetadata = new PaginationMetadata(contacts.Count(), @params.Page, @params.ItemsPerPage);
-            Response.Headers.Add("X-Pagination", JsonSerializer.Serialize(paginationMetadata));
+            PaginationMetadata<ContactDTO> ListContacts = new PaginationMetadata<ContactDTO>(contacts.Count(), @params.Page, @params.ItemsPerPage);
+
+            //var paginationMetadata = new PaginationMetadata(contacts.Count(), @params.Page, @params.ItemsPerPage);
+            //Response.Headers.Add("X-Pagination", JsonSerializer.Serialize(paginationMetadata));
 
             var items = await contacts.Skip((@params.Page - 1) * @params.ItemsPerPage)
                                       .Take(@params.ItemsPerPage)
                                       .ToListAsync();
-                            
-            return Ok(items.Select(e => new ContactDTO
-            {
+
+            ListContacts.Results = items.Select(e => new ContactDTO {
                 Id = e.Id,
                 Name = e.Name,
                 Phone = e.Phone
+            }).ToList();
+
+            return Ok(ListContacts);
             }
-            ));
+            catch (Exception)
+            {
+                return BadRequest();
+            }
         }
 
         // PUT: api/Contacts/5
