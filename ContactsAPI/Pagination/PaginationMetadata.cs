@@ -1,6 +1,6 @@
 ﻿namespace ContactsAPI.Pagination
 {
-    public class PaginationMetadata<T>
+    public class PaginationMetadata<T> : IPaginationMetadata<T>
     {
         public List<T> Results { get; set; }
 
@@ -15,7 +15,8 @@
         public int CurrentPage { get; set; }
         public int TotalCount { get; set; }
         public int TotalPages { get; set; }
-        public int Status { get; set; } = 200;
 
+        public bool Success { get; set; }
+        public string Message { get; set; }
     }
 }

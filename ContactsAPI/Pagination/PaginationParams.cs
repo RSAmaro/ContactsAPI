@@ -2,11 +2,19 @@
 {
     public class PaginationParams
     {
-        private int _maxItemsPerPage = 50;
+        // Default Pagination Values
+        private readonly int _maxItemsPerPage = 50;
         private int itemsPerPage;
 
+        // Search Queries
         public string? Qry { get; set; }
+        public string? QryId { get; set; }
+        public string? QryName { get; set; }
+        public string? QryPhone { get; set; }
+
+        // Pagination
         public int Page { get; set; } = 1;
+        public string? Sort { get; set; }
         public int ItemsPerPage
         {
             get => itemsPerPage;

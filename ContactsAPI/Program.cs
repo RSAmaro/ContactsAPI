@@ -1,4 +1,6 @@
 using ContactsAPI.Data;
+using ContactsAPI.Data.Repositories;
+using ContactsAPI.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -21,6 +23,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<DataContext>(options => {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
+
+builder.Services.AddScoped<IContactRepository, ContactRepository>();
 
 // Enable Cors
 builder.Services.AddCors(options =>{
