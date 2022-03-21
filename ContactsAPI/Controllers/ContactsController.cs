@@ -50,7 +50,7 @@ namespace ContactsAPI.Controllers
 
         // PUT: api/Contacts/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
+        [HttpPost("{id}")]
         public async Task<IActionResult> PutContact(int id, Contact contact)
         {
             return Ok(await _contacts.Edit(id, contact));

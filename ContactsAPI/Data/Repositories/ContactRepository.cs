@@ -25,12 +25,12 @@ namespace ContactsAPI.Data.Repositories
 
         public async Task<List<Contact>> GetAllAsync()
         {
-            return await _ctx.Contacts.ToListAsync();
+            return await _ctx.Contacts.Where(c => c.DateDeleted == null).ToListAsync();
         }
 
         public async Task<PaginationMetadata<ContactDTO>> GetAllPaginated(PaginationParams parameter)
         {
-            IQueryable<Contact> contacts = _ctx.Contacts;
+            IQueryable<Contact> contacts = _ctx.Contacts.Where(c => c.DateDeleted == null);
             PaginationMetadata<ContactDTO> ListContacts = new(contacts.Count(), parameter.Page, parameter.ItemsPerPage);
 
             if ((parameter.Page < 1) || (parameter.ItemsPerPage < 1))
@@ -64,7 +64,7 @@ namespace ContactsAPI.Data.Repositories
                 "phone_desc" => contacts.OrderByDescending(c => c.Phone),
                 _ => contacts.OrderBy(c => c.Id),
             };
-            
+
 
             var items = await contacts.Skip((parameter.Page - 1) * parameter.ItemsPerPage)
                                       .Take(parameter.ItemsPerPage)
@@ -124,6 +124,7 @@ namespace ContactsAPI.Data.Repositories
 
                             // TODO: decide which value should be written to database
                             // proposedValues[property] = <value to be saved>;
+                            // databaseValues[property] = proposedValue;
 
                             //proposedValues = contact;
                         }
@@ -160,10 +161,17 @@ namespace ContactsAPI.Data.Repositories
             if (contact == null)
                 return new MessageHelper(false, "Não existe nenhum contato com esse ID");
 
-            _ctx.Contacts.Remove(contact);
-            await _ctx.SaveChangesAsync();
+            if (typeof(Auditable).IsAssignableFrom(typeof(Contact))) {
+                contact.DateDeleted = DateTimeOffset.UtcNow;
+                _ctx.Entry(contact).CurrentValues.SetValues(contact);
 
-            return new MessageHelper(true, "Apagado com Sucesso");
+                //_ctx.Contacts.Remove(contact);
+                await _ctx.SaveChangesAsync();
+
+                return new MessageHelper(true, "Apagado com Sucesso");
+            }
+
+            return new MessageHelper(false, "Não foi apagado");
         }
 
         private bool ContactExists(int id)
