@@ -16,21 +16,24 @@ namespace ContactsAPI.Data.Repositories
             _ctx = ctx;
         }
 
-        public async Task<Contact> CreateContactAsync(Contact contact)
+        public async Task<ContactCreateDTO> CreateContactAsync(ContactCreateDTO contact)
         {
-            _ctx.Contacts.Add(contact);
+            _ctx.Contacts.Add(contact.ToEntity());
             await _ctx.SaveChangesAsync();
             return contact;
         }
 
-        public async Task<List<Contact>> GetAllAsync()
+
+        public async Task<List<ContactDTO>> GetAllAsync()
         {
-            return await _ctx.Contacts.Where(c => c.DateDeleted == null).ToListAsync();
+            var items = await _ctx.Contacts.Include(t => t.Type).Where(c => c.DateDeleted == null).ToListAsync();
+            List<ContactDTO> result = items.Select(c => new ContactDTO(c)).ToList();
+            return result;
         }
 
         public async Task<PaginationMetadata<ContactDTO>> GetAllPaginated(PaginationParams parameter)
         {
-            IQueryable<Contact> contacts = _ctx.Contacts.Where(c => c.DateDeleted == null);
+            IQueryable<Contact> contacts = _ctx.Contacts.Include(t => t.Type).Where(c => c.DateDeleted == null);
             PaginationMetadata<ContactDTO> ListContacts = new(contacts.Count(), parameter.Page, parameter.ItemsPerPage);
 
             if ((parameter.Page < 1) || (parameter.ItemsPerPage < 1))
@@ -40,19 +43,33 @@ namespace ContactsAPI.Data.Repositories
                 return ListContacts;
             }
 
-            if (parameter.Qry != null)
+            if (parameter.Qry != null && (parameter.QryParam == null || parameter.QryParam.Length < 1))
                 contacts = contacts.Where(c => c.Name.Contains(parameter.Qry.Trim()) ||
                                                Convert.ToString(c.Id).Contains(parameter.Qry) ||
-                                               Convert.ToString(c.Phone).Contains(parameter.Qry));
+                                               Convert.ToString(c.Phone).Contains(parameter.Qry) ||
+                                               c.Type.Name.Contains(parameter.Qry.Trim()));
 
-            if (parameter.QryId != null)
-                contacts = contacts.Where(c => Convert.ToString(c.Id).Contains(parameter.QryId.Trim()));
-
-            if (parameter.QryName != null)
-                contacts = contacts.Where(c => c.Name.Contains(parameter.QryName.Trim()));
-
-            if (parameter.QryPhone != null)
-                contacts = contacts.Where(c => Convert.ToString(c.Phone).Contains(parameter.QryPhone.Trim()));
+            if(parameter.QryParam is not null && parameter.Qry is not null)
+                foreach (var item in parameter.QryParam)
+                {
+                    switch (item)
+                    {
+                        case "id":
+                            contacts = contacts.Where(c => Convert.ToString(c.Id).Contains(parameter.Qry.Trim()));
+                            break;
+                        case "name":
+                            contacts = contacts.Where(c => c.Name.Contains(parameter.Qry.Trim()));
+                            break;
+                        case "phone":
+                            contacts = contacts.Where(c => Convert.ToString(c.Phone).Contains(parameter.Qry.Trim()));
+                            break;
+                        case "typeName":
+                            contacts = contacts.Where(c => c.Type.Name.Contains(parameter.Qry.Trim()));
+                            break;
+                        default:
+                            break;
+                    }
+                }
 
             contacts = parameter.Sort switch
             {
@@ -62,20 +79,18 @@ namespace ContactsAPI.Data.Repositories
                 "name_desc" => contacts.OrderByDescending(c => c.Name),
                 "phone" => contacts.OrderBy(p => p.Phone),
                 "phone_desc" => contacts.OrderByDescending(c => c.Phone),
+                "typeName" => contacts.OrderBy(p => p.Type.Name),
+                "typeName_desc" => contacts.OrderByDescending(c => c.Type.Name),
                 _ => contacts.OrderBy(c => c.Id),
             };
 
+            ListContacts.TotalCount = contacts.Count();
 
             var items = await contacts.Skip((parameter.Page - 1) * parameter.ItemsPerPage)
                                       .Take(parameter.ItemsPerPage)
                                       .ToListAsync();
 
-            ListContacts.Results = items.Select(c => new ContactDTO
-            {
-                Id = c.Id,
-                Name = c.Name,
-                Phone = c.Phone
-            }).ToList();
+            ListContacts.Results = items.Select(c => new ContactDTO(c)).ToList();
 
             ListContacts.Success = true;
             ListContacts.Message = "Encontrado com Sucesso!";
@@ -83,7 +98,7 @@ namespace ContactsAPI.Data.Repositories
             return ListContacts;
         }
 
-        public async Task<Contact> GetByIdAsync(int id)
+        public async Task<ContactListDTO> GetByIdAsync(int id)
         {
             //var contact = await _context.Contacts.FindAsync(id);
 
@@ -91,15 +106,18 @@ namespace ContactsAPI.Data.Repositories
             //{
             //    return NotFound();
             //}
-
-            return await _ctx.Contacts.FirstOrDefaultAsync(contact => contact.Id == id);
+            var items = await _ctx.Contacts.Include(t => t.Type).FirstOrDefaultAsync(contact => contact.Id == id);
+            
+            ContactListDTO result = new(items);
+            return result;
         }
 
-        public async Task<MessageHelper<Contact>> Edit(int id, Contact contact)
+        public async Task<MessageHelper<ContactListDTO>> Edit(int id, ContactEditDTO c)
         {
+            Contact contact = c.ToEntity();
             if (id != contact.Id)
             {
-                return new MessageHelper<Contact>(false, "Request Inválido!", contact);
+                return new MessageHelper<ContactListDTO>(false, "Request Inválido!", new ContactListDTO(contact));
             }
 
             _ctx.Entry(contact).State = EntityState.Modified;
@@ -112,7 +130,7 @@ namespace ContactsAPI.Data.Repositories
             {
                 foreach (var entry in ex.Entries)
                 {
-                    if (entry.Entity is Contact)
+                    if (entry.Entity is ContactListDTO)
                     {
                         var proposedValues = entry.CurrentValues;
                         var databaseValues = entry.GetDatabaseValues();
@@ -151,7 +169,7 @@ namespace ContactsAPI.Data.Repositories
                 //}
             }
 
-            return new MessageHelper<Contact>(true, "Editado com Sucesso!", contact);
+            return new MessageHelper<ContactListDTO>(true, "Editado com Sucesso!", new ContactListDTO(contact));
         }
 
         public async Task<MessageHelper> Delete(int id)

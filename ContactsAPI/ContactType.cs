@@ -2,7 +2,7 @@
 
 namespace ContactsAPI
 {
-    public class ContactType
+    public class ContactType : Auditable
     {
         [Key]
         public int Id { get; set; }

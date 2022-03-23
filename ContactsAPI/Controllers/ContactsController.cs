@@ -29,29 +29,29 @@ namespace ContactsAPI.Controllers
 
         // GET: api/Contacts
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Contact>>> GetContacts()
+        public async Task<ActionResult<IEnumerable<ContactDTO>>> GetContacts()
         {
             return Ok(await _contacts.GetAllAsync());
         }
 
         // GET: api/Contacts/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Contact>> GetContact(int id)
+        public async Task<ActionResult<ContactListDTO>> GetContact(int id)
         {
             return Ok(await _contacts.GetByIdAsync(id));
         }
 
         // GET: api/Contacts/List
-        [HttpGet("List")]
-        public async Task<PaginationMetadata<ContactDTO>> Get([FromQuery] PaginationParams @params)
+        [HttpPost("List")]
+        public async Task<PaginationMetadata<ContactDTO>> Get([FromBody] PaginationParams @params)
         {
             return await _contacts.GetAllPaginated(@params);
         }
 
         // PUT: api/Contacts/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost("{id}")]
-        public async Task<IActionResult> PutContact(int id, Contact contact)
+        [HttpPut("{id}")]
+        public async Task<ActionResult<ContactListDTO>> PutContact(int id, ContactEditDTO contact)
         {
             return Ok(await _contacts.Edit(id, contact));
         }
@@ -59,7 +59,7 @@ namespace ContactsAPI.Controllers
         // POST: api/Contacts
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Contact>> PostContact(Contact contact)
+        public async Task<ActionResult<ContactCreateDTO>> PostContact(ContactCreateDTO contact)
         {
             return Ok(await _contacts.CreateContactAsync(contact));
         }

@@ -1,4 +1,5 @@
-﻿using ContactsAPI.Interfaces;
+﻿using ContactsAPI.Dto;
+using ContactsAPI.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace ContactsAPI.Data.Repositories
@@ -12,9 +13,20 @@ namespace ContactsAPI.Data.Repositories
             _ctx = ctx;
         }
 
-        public async Task<List<ContactType>> GetAllAsync()
+        public async Task<List<ContactTypeDTO>> GetAllAsync()
         {
-            return await _ctx.ContactTypes.ToListAsync();
+            var items = await _ctx.ContactTypes.Where(c => c.DateDeleted == null).ToListAsync();
+            List<ContactTypeDTO> result = items.Select(c => new ContactTypeDTO(c)).ToList();
+            return result;
         }
+
+        public async Task<ContactTypeCreateDTO> CreateAsync(ContactTypeCreateDTO type)
+        {
+            _ctx.ContactTypes.Add(type.ToEntity());
+            await _ctx.SaveChangesAsync();
+
+            return type;
+        }
+
     }
 }

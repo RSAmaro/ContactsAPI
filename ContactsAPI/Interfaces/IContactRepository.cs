@@ -7,11 +7,11 @@ namespace ContactsAPI.Interfaces
 {
     public interface IContactRepository
     {
-        Task<List<Contact>> GetAllAsync();
+        Task<List<ContactDTO>> GetAllAsync();
         Task<PaginationMetadata<ContactDTO>> GetAllPaginated(PaginationParams parameter);
-        Task<Contact> GetByIdAsync(int id);
-        Task<Contact> CreateContactAsync(Contact contact);
-        Task<MessageHelper<Contact>> Edit(int id, Contact contact);
+        Task<ContactListDTO> GetByIdAsync(int id);
+        Task<ContactCreateDTO> CreateContactAsync(ContactCreateDTO contact);
+        Task<MessageHelper<ContactListDTO>> Edit(int id, ContactEditDTO contact);
         Task<MessageHelper> Delete(int id);
     }
 }

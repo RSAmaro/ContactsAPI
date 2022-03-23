@@ -4,6 +4,7 @@ namespace ContactsAPI
 {
     public class Contact : Auditable
     {
+        [Key]
         public int Id { get; set; }
 
         [StringLength(20, MinimumLength = 2)]

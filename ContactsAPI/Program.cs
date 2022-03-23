@@ -25,6 +25,7 @@ builder.Services.AddDbContext<DataContext>(options => {
 });
 
 builder.Services.AddScoped<IContactRepository, ContactRepository>();
+builder.Services.AddScoped<IContactTypeRepository, ContactTypeRepository>();
 
 // Enable Cors
 builder.Services.AddCors(options =>{

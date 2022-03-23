@@ -1,4 +1,5 @@
-﻿using ContactsAPI.Interfaces;
+﻿using ContactsAPI.Dto;
+using ContactsAPI.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ContactsAPI.Controllers
@@ -16,9 +17,16 @@ namespace ContactsAPI.Controllers
 
         // GET: api/Contacts
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Contact>>> GetTypes()
+        public async Task<ActionResult<IEnumerable<ContactTypeDTO>>> GetTypes()
         {
             return Ok(await _types.GetAllAsync());
+        }
+
+        // POST: api/Contacts
+        [HttpPost]
+        public async Task<ActionResult<ContactTypeCreateDTO>> PostType(ContactTypeCreateDTO type)
+        {
+            return Ok(await _types.CreateAsync(type));
         }
 
     }

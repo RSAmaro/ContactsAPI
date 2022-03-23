@@ -8,9 +8,7 @@
 
         // Search Queries
         public string? Qry { get; set; }
-        public string? QryId { get; set; }
-        public string? QryName { get; set; }
-        public string? QryPhone { get; set; }
+        public string[]? QryParam { get; set; }
 
         // Pagination
         public int Page { get; set; } = 1;
