@@ -27,13 +27,6 @@ namespace ContactsAPI.Controllers
             _contacts = contacts;
         }
 
-        // GET: api/Contacts
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<ContactDTO>>> GetContacts()
-        {
-            return Ok(await _contacts.GetAllAsync());
-        }
-
         // GET: api/Contacts/5
         [HttpGet("{id}")]
         public async Task<ActionResult<ContactListDTO>> GetContact(int id)
@@ -59,7 +52,7 @@ namespace ContactsAPI.Controllers
         // POST: api/Contacts
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<ContactCreateDTO>> PostContact(ContactCreateDTO contact)
+        public async Task<ActionResult<MessageHelper<ContactCreateDTO>>> PostContact(ContactCreateDTO contact)
         {
             return Ok(await _contacts.CreateContactAsync(contact));
         }

@@ -2,6 +2,7 @@
 using ContactsAPI.Interfaces;
 using ContactsAPI.Models;
 using ContactsAPI.Pagination;
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,18 +17,25 @@ namespace ContactsAPI.Data.Repositories
             _ctx = ctx;
         }
 
-        public async Task<ContactCreateDTO> CreateContactAsync(ContactCreateDTO contact)
+        public async Task<MessageHelper> CreateContactAsync(ContactCreateDTO contact)
         {
+            MessageHelper result = new();
+            ContactValidator validation = new();
+
+            var responseValidate = await validation.ValidateAsync(contact);
+            if (responseValidate is null || responseValidate.IsValid == false)
+            {
+                result.Success = false;
+                result.Message = (responseValidate != null) ? responseValidate!.Errors.FirstOrDefault()!.ErrorMessage : "Erro a validar Campos!";
+                return result;
+            }
+
             _ctx.Contacts.Add(contact.ToEntity());
             await _ctx.SaveChangesAsync();
-            return contact;
-        }
 
+            result.Success = true;
+            result.Message = "Criado com sucesso!";
 
-        public async Task<List<ContactDTO>> GetAllAsync()
-        {
-            var items = await _ctx.Contacts.Include(t => t.Type).Where(c => c.DateDeleted == null).ToListAsync();
-            List<ContactDTO> result = items.Select(c => new ContactDTO(c)).ToList();
             return result;
         }
 
@@ -49,7 +57,7 @@ namespace ContactsAPI.Data.Repositories
                                                Convert.ToString(c.Phone).Contains(parameter.Qry) ||
                                                c.Type.Name.Contains(parameter.Qry.Trim()));
 
-            if(parameter.QryParam is not null && parameter.Qry is not null)
+            if (parameter.QryParam is not null && parameter.Qry is not null)
                 foreach (var item in parameter.QryParam)
                 {
                     switch (item)
@@ -98,26 +106,53 @@ namespace ContactsAPI.Data.Repositories
             return ListContacts;
         }
 
-        public async Task<ContactListDTO> GetByIdAsync(int id)
+        public async Task<MessageHelper<ContactListDTO>> GetByIdAsync(int id)
         {
-            //var contact = await _context.Contacts.FindAsync(id);
+            MessageHelper<ContactListDTO> result = new();
+            var contact = await _ctx.Contacts.FindAsync(id);
 
-            //if (contact == null)
-            //{
-            //    return NotFound();
-            //}
+            if (contact == null)
+            {
+                result.Message = "Não foi encontrado nenhum Contato com esse ID!";
+                result.Success = false;
+                result.obj = null;
+            }
+
             var items = await _ctx.Contacts.Include(t => t.Type).FirstOrDefaultAsync(contact => contact.Id == id);
-            
-            ContactListDTO result = new(items);
+            if (items != null)
+            {
+                result.Message = "Encontrado com sucesso!";
+                result.Success = true;
+                result.obj = new(items);
+                return result;
+            }
+
+            result.Message = "Não foi encontrado nenhum Contato com esse ID!";
+            result.Success = false;
+            result.obj = null;
             return result;
         }
 
         public async Task<MessageHelper<ContactListDTO>> Edit(int id, ContactEditDTO c)
         {
+            MessageHelper<ContactListDTO> result = new();
+            ContactValidatorEdit validation = new();
+
+            var responseValidate = await validation.ValidateAsync(c);
+            if (responseValidate is null || responseValidate.IsValid == false)
+            {
+                result.Success = false;
+                result.Message = (responseValidate != null) ? responseValidate!.Errors.FirstOrDefault()!.ErrorMessage : "Erro a validar Campos!";
+                return result;
+            }
+
             Contact contact = c.ToEntity();
             if (id != contact.Id)
             {
-                return new MessageHelper<ContactListDTO>(false, "Request Inválido!", new ContactListDTO(contact));
+                result.Message = "Request Inválido";
+                result.Success = false;
+                result.obj = null;
+                return result;
             }
 
             _ctx.Entry(contact).State = EntityState.Modified;
@@ -169,27 +204,41 @@ namespace ContactsAPI.Data.Repositories
                 //}
             }
 
-            return new MessageHelper<ContactListDTO>(true, "Editado com Sucesso!", new ContactListDTO(contact));
+            result.Message = "Editado com Sucesso!";
+            result.Success = true;
+            result.obj = new(contact);
+
+            return result;
         }
 
         public async Task<MessageHelper> Delete(int id)
         {
+            MessageHelper result = new();
             var contact = await _ctx.Contacts.FindAsync(id);
 
             if (contact == null)
-                return new MessageHelper(false, "Não existe nenhum contato com esse ID");
+            {
+                result.Message = "Não existe nenhum contato com esse ID!";
+                result.Success = false;
+                return result;
+            }
 
-            if (typeof(Auditable).IsAssignableFrom(typeof(Contact))) {
+            if (typeof(Auditable).IsAssignableFrom(typeof(Contact)))
+            {
                 contact.DateDeleted = DateTimeOffset.UtcNow;
                 _ctx.Entry(contact).CurrentValues.SetValues(contact);
 
                 //_ctx.Contacts.Remove(contact);
                 await _ctx.SaveChangesAsync();
 
-                return new MessageHelper(true, "Apagado com Sucesso");
+                result.Message = "Apagado com Sucesso!";
+                result.Success = true;
+                return result;
             }
 
-            return new MessageHelper(false, "Não foi apagado");
+            result.Message = "Não foi apagado!";
+            result.Success = true;
+            return result;
         }
 
         private bool ContactExists(int id)
