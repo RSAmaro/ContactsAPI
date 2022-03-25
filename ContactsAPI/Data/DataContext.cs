@@ -1,15 +1,19 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using ContactsAPI.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace ContactsAPI.Data
 {
-    public class DataContext : DbContext
-    {
+    public class DataContext : IdentityDbContext<ApplicationUser, IdentityRole, string, IdentityUserClaim<string>, IdentityUserRole<string>, IdentityUserLogin<string>, IdentityRoleClaim<string>, IdentityUserToken<string>>
+	{
         public DataContext(DbContextOptions<DataContext> options): base(options) { }
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+			base.OnModelCreating(modelBuilder);
 			//modelBuilder.Entity<Contact>().Property(p => p.DateUpdated).IsConcurrencyToken();
-        }
+		}
 
 		public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
 		{

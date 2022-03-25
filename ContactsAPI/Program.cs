@@ -1,8 +1,13 @@
 using ContactsAPI.Data;
 using ContactsAPI.Data.Repositories;
 using ContactsAPI.Interfaces;
+using ContactsAPI.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var myAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
@@ -26,6 +31,22 @@ builder.Services.AddDbContext<DataContext>(options => {
 
 builder.Services.AddScoped<IContactRepository, ContactRepository>();
 builder.Services.AddScoped<IContactTypeRepository, ContactTypeRepository>();
+
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+                .AddEntityFrameworkStores<DataContext>()
+                .AddDefaultTokenProviders();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
+         options.TokenValidationParameters = new TokenValidationParameters
+         {
+             ValidateIssuer = false,
+             ValidateAudience = false,
+             ValidateLifetime = true,
+             ValidateIssuerSigningKey = true,
+             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration.GetConnectionString("jwt:key"))),
+             ClockSkew = TimeSpan.Zero
+         });
+
 
 // Enable Cors
 builder.Services.AddCors(options =>{
