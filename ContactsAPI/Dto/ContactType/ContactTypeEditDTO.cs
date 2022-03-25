@@ -2,19 +2,21 @@
 
 namespace ContactsAPI.Dto
 {
-    public class ContactTypeCreateDTO
+    public class ContactTypeEditDTO
     {
+        public int Id { get; set; }
         public string Name { get; set; }
-        
+
         public ContactType ToEntity()
         {
-            return new ContactType { Name = Name };
+            return new ContactType { Id = Id, Name = Name };
         }
 
-        public class ContactTypeValidator : AbstractValidator<ContactTypeCreateDTO>
+        public class ContactTypeValidatorEdit : AbstractValidator<ContactTypeEditDTO>
         {
-            public ContactTypeValidator()
+            public ContactTypeValidatorEdit()
             {
+                RuleFor(t => t.Id).NotEmpty().WithMessage("Id inválido ou vazio!");
                 RuleFor(t => t.Name)
                     .NotEmpty().WithMessage("Nome inválido ou vazio!")
                     .MaximumLength(20).WithMessage("Nome deve conter menos que 20 carateres!");

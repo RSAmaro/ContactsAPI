@@ -109,28 +109,30 @@ namespace ContactsAPI.Data.Repositories
         public async Task<MessageHelper<ContactListDTO>> GetByIdAsync(int id)
         {
             MessageHelper<ContactListDTO> result = new();
-            var contact = await _ctx.Contacts.FindAsync(id);
+            try
+            {
+                var contact = await _ctx.Contacts.Include(t => t.Type).FirstOrDefaultAsync(contact => contact.Id == id);
+                if (contact == null)
+                {
+                    result.Message = "Não foi encontrado nenhum Contato com esse ID!";
+                    result.Success = false;
+                    result.obj = null;
+                    return result;
+                }
 
-            if (contact == null)
+                result.Message = "Encontrado com sucesso!";
+                result.Success = true;
+                result.obj = new(contact);
+                return result;
+            }
+            catch (Exception)
             {
                 result.Message = "Não foi encontrado nenhum Contato com esse ID!";
                 result.Success = false;
                 result.obj = null;
-            }
-
-            var items = await _ctx.Contacts.Include(t => t.Type).FirstOrDefaultAsync(contact => contact.Id == id);
-            if (items != null)
-            {
-                result.Message = "Encontrado com sucesso!";
-                result.Success = true;
-                result.obj = new(items);
                 return result;
             }
-
-            result.Message = "Não foi encontrado nenhum Contato com esse ID!";
-            result.Success = false;
-            result.obj = null;
-            return result;
+           
         }
 
         public async Task<MessageHelper<ContactListDTO>> Edit(int id, ContactEditDTO c)

@@ -1,4 +1,5 @@
-﻿namespace ContactsAPI.Dto
+﻿
+namespace ContactsAPI.Dto
 {
     public class ContactTypeDTO
     {
