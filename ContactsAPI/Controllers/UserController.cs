@@ -47,19 +47,27 @@ namespace ContactsAPI.Controllers
         }
 
         [HttpPost("Login")]
-        public async Task<ActionResult<UserToken>> Login([FromBody] UserInfo userInfo)
+        public async Task<MessageHelper<UserToken>> Login([FromBody] UserInfo userInfo)
         {
+            var finalResult = new MessageHelper<UserToken>();
             var result = await _signInManager.PasswordSignInAsync(userInfo.Email, userInfo.Password,
                  isPersistent: false, lockoutOnFailure: false);
 
             if (result.Succeeded)
             {
-                return BuildToken(userInfo);
+                finalResult.Message = "Login Correto!";
+                finalResult.Success = true;
+                finalResult.obj = BuildToken(userInfo);
+                return finalResult;
             }
             else
             {
-                ModelState.AddModelError(string.Empty, "Login inválido");
-                return BadRequest(ModelState);
+                //ModelState.AddModelError(string.Empty, "Login inválido");
+                //return BadRequest(ModelState);
+                finalResult.Message = "Login Incorreto!";
+                finalResult.Success = false;
+                finalResult.obj = null;
+                return finalResult;
             }
         }
 
@@ -78,7 +86,7 @@ namespace ContactsAPI.Controllers
             // tempo de expiração do token: 1 hora
             var expiration = DateTime.UtcNow.AddHours(1);
 
-            JwtSecurityToken token = new JwtSecurityToken(
+            JwtSecurityToken token = new(
                issuer: null,
                audience: null,
                claims: claims,
