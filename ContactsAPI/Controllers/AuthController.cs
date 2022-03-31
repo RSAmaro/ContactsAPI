@@ -82,7 +82,7 @@ namespace ContactsAPI.Controllers
             catch (Exception)
             {
                 result.Success = false;
-                result.Message = "Ocorreu um erro inesperado ao criar o utilizador.";
+                result.Message = "Error creating an user.";
             }
 
             return Ok(result);
