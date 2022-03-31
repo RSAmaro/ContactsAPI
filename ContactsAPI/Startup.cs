@@ -1,7 +1,9 @@
-﻿using ContactsAPI.Data;
+﻿using ContactsAPI.Controllers;
+using ContactsAPI.Data;
 using ContactsAPI.Data.Repositories;
 using ContactsAPI.Entities;
 using ContactsAPI.Interfaces;
+using ContactsAPI.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -171,6 +173,8 @@ namespace ContactsAPI
 
             services.AddTransient<IContactRepository, ContactRepository>();
             services.AddTransient<IContactTypeRepository, ContactTypeRepository>();
+            services.AddTransient<IAuthService, AuthService>();
+
             //services.AddTransient<IContactTypeRepository,USER>();
         }
 
