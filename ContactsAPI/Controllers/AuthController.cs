@@ -1,6 +1,7 @@
 ﻿using ContactsAPI.Entities;
 using ContactsAPI.Models;
 using ContactsAPI.Models.User;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -69,6 +70,7 @@ namespace ContactsAPI.Controllers
                 };
 
                 var resultCreateUserInDatabase = await _userManager.CreateAsync(userInDatabase, authDTO.Password);
+                await _userManager.AddToRoleAsync(userInDatabase, Roles.Member.Value );
                 if (!resultCreateUserInDatabase.Succeeded)
                 {
                     result.Success = false;
@@ -87,5 +89,60 @@ namespace ContactsAPI.Controllers
 
             return Ok(result);
         }
+
+        [AllowAnonymous]
+        [HttpPost]
+        [Route("[action]")]
+        public IActionResult Logout()
+        {
+            MessageHelper<object> response = new();
+
+            try
+            {
+                HttpContext.Session.Clear();
+                response.Success = true;
+                response.Message = "";
+
+            }
+            catch (Exception ex)
+            {
+                response.Success = false;
+                response.obj = null;
+                response.Message = ex.Message;
+            }
+            return Ok(response);
+        }
+
+        [AllowAnonymous]
+        [HttpGet]
+        [Route("[action]")]
+        public IActionResult GetUser()
+        {
+            MessageHelper<AuthDTO> response = new();
+
+            try
+            {
+                response.Success = true;
+                response.Message = "";
+                response.obj = new AuthDTO()
+                {
+                    Token = HttpContext.Session.GetString("token") ?? null,
+                    UserName = HttpContext.Session.GetString("username") ?? null,
+                    Id = HttpContext.Session.GetString("id") ?? null,
+                    Roles = HttpContext.Session.GetString("roles")?.Split(",") ?? null,
+                };
+            }
+            catch (Exception ex)
+            {
+                response.Success = false;
+                response.Message = ex.Message;
+                response.obj = null;
+            }
+
+            return Ok(response);
+        }
+
     }
+
+    
 }

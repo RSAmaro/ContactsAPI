@@ -190,6 +190,9 @@ namespace ContactsAPI
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
+
+            CreateUserRoles(serviceProvider).Wait();
+
             app.UseSession();
 
             app.UseRouting();
@@ -206,11 +209,7 @@ namespace ContactsAPI
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-            });
-
-            app.UseRouting();
-
-            CreateUserRoles(serviceProvider).Wait();
+            });            
         }
 
         private async Task CreateUserRoles(IServiceProvider serviceProvider)

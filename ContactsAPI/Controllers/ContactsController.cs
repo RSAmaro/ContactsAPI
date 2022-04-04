@@ -13,6 +13,8 @@ using ContactsAPI.Dto;
 using System.Text.Json;
 using ContactsAPI.Interfaces;
 using ContactsAPI.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace ContactsAPI.Controllers
 {
@@ -35,6 +37,7 @@ namespace ContactsAPI.Controllers
         }
 
         // GET: api/Contacts/List
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         [HttpPost("List")]
         public async Task<PaginationMetadata<ContactDTO>> Get([FromBody] PaginationParams @params)
         {
