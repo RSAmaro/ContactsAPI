@@ -3,6 +3,7 @@ using ContactsAPI.Entities;
 using ContactsAPI.Models;
 using ContactsAPI.Models.User;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -73,6 +74,8 @@ namespace ContactsAPI.Service
 
             return response;
         }
+
+
 
         private async Task<ApplicationUser> AuthenticateUser(LoginDTO login)
         {
@@ -168,6 +171,35 @@ namespace ContactsAPI.Service
             }
 
             return response;
+        }
+
+        public async Task<MessageHelper> ConfirmEmail(string userId, string token)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return new MessageHelper
+                {
+                    Success = false,
+                    Message = "User not Found!"
+                };
+
+            var decodedToken = WebEncoders.Base64UrlDecode(token);
+            string normalToken = Encoding.UTF8.GetString(decodedToken);
+
+            var result = await _userManager.ConfirmEmailAsync(user, normalToken);
+
+            if (result.Succeeded)
+                return new MessageHelper
+                {
+                    Success = true,
+                    Message = "Email Confirmed Successfuly!",
+                };
+
+            return new MessageHelper
+            {
+                Success = false,
+                Message = result.Errors.FirstOrDefault()!.Description,
+            };
         }
     }
 }
