@@ -178,7 +178,7 @@ namespace ContactsAPI
             services.AddTransient<IContactRepository, ContactRepository>();
             services.AddTransient<IContactTypeRepository, ContactTypeRepository>();
             services.AddTransient<IAuthService, AuthService>();
-
+            services.AddTransient<IUserService, UserService>();
             //services.AddTransient<IContactTypeRepository,USER>();
         }
 

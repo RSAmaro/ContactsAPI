@@ -76,17 +76,17 @@ namespace ContactsAPI.Controllers
                     UserName = authDTO.Email,
                     Name = authDTO.Username!,
                 };
-                /*
+                
                  var resultCreateUserInDatabase = await _userManager.CreateAsync(userInDatabase, authDTO.Password);
 
                  await _userManager.AddToRoleAsync(userInDatabase, Roles.Member.Value );
                  if (!resultCreateUserInDatabase.Succeeded)
                  {
                      result.Success = false;
-                     result.Message = "Error creating an user!";
+                     result.Message = "Couldn't assign role to new user!";
                      return Ok(result);
                  }
-                */
+                
 
                 var confirmEmailToken = await _userManager.GenerateEmailConfirmationTokenAsync(userInDatabase);
 
@@ -100,13 +100,12 @@ namespace ContactsAPI.Controllers
                     Subject = "Confirm your Email",
                     Body = "<h1>Confirm your Email</h1>" + $"<a href='{url}'>Confirm Email</a>",
                     Attachments = null
-
                 };
                 
-                await _mailService.SendEmail2(mail);
+                await _mailService.SendEmailAsync(mail);
 
                 result.Success = true;
-                result.Message = "User Created!";
+                result.Message = "User Created, please verify email!";
             }
             catch (Exception ex)
             {
