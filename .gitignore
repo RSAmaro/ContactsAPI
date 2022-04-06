@@ -4,7 +4,7 @@
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
 # Files to Ignore
-appsettings.json
+appsettings_development.json
 
 # User-specific files
 *.rsuser
