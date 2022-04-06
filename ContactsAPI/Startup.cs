@@ -25,7 +25,7 @@ namespace ContactsAPI
             //Para ser possível atualizar as settings em runtime
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddJsonFile("appsettings.Development.json", optional: false, reloadOnChange: true)
                 .AddEnvironmentVariables();
 
             Configuration = builder.Build();
