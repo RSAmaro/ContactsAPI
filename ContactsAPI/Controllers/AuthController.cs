@@ -9,6 +9,7 @@ using System.Text;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using ContactsAPI.Service;
+using ContactsAPI.Models.Auth;
 
 namespace ContactsAPI.Controllers
 {
@@ -62,6 +63,7 @@ namespace ContactsAPI.Controllers
                 }
 
                 ApplicationUser userInDatabase = await _userManager.FindByEmailAsync(authDTO.Email);
+                
                 if (userInDatabase != null)
                 {
                     result.Success = false;
@@ -87,13 +89,12 @@ namespace ContactsAPI.Controllers
                      return Ok(result);
                  }
                 
-
                 var confirmEmailToken = await _userManager.GenerateEmailConfirmationTokenAsync(userInDatabase);
 
                 var encodedEmailToken = Encoding.UTF8.GetBytes(confirmEmailToken);
                 var validEmailToken = WebEncoders.Base64UrlEncode(encodedEmailToken);
 
-                string url = $"{_configuration["AppUrl"]}/api/auth/ConfirmEmail?userid={userInDatabase.Id}&token={validEmailToken}";
+                string url = $"{_configuration["FrontendUrl"]}/ConfirmEmailToken?userid={userInDatabase.Id}&token={validEmailToken}";
                 MailRequest mail = new()
                 {
                     ToEmail = userInDatabase.Email,
@@ -117,21 +118,19 @@ namespace ContactsAPI.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet]
+        [HttpPost]
         [Route("[action]")]
-        public async Task<IActionResult> ConfirmEmail(string userId, string token)
+        public async Task<MessageHelper> ConfirmEmail(ConfirmEmailDTO dto)
         {
-            if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(userId))
-                return NotFound();
-
-            var result = await _authService.ConfirmEmail(userId, token);
+            if (string.IsNullOrEmpty(dto.Token) || string.IsNullOrEmpty(dto.UserId))
+                return new MessageHelper { Success = false, Message = "Invalid Parameters" };
+            
+            var result = await _authService.ConfirmEmail(dto);
             if (result.Success)
-                return Ok(result);
+                return new MessageHelper { Success = true, Message = "Confirmed Successfully" };
 
-            return BadRequest(result);
+            return new MessageHelper { Success = false, Message = "Bad Request!" };
         }
-
-
 
         [AllowAnonymous]
         [HttpPost]

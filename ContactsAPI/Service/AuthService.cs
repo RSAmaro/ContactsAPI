@@ -1,6 +1,7 @@
 ﻿using ContactsAPI.Controllers;
 using ContactsAPI.Entities;
 using ContactsAPI.Models;
+using ContactsAPI.Models.Auth;
 using ContactsAPI.Models.User;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
@@ -44,11 +45,10 @@ namespace ContactsAPI.Service
                 var user = await AuthenticateUser(login);
 
                 var userRoles = (await _userManager.GetRolesAsync(user)).ToList();
-
                 if (user == null)
                 {
                     response.Success = false;
-                    response.Message = "Os dados estão incorretos.";
+                    response.Message = "Incorrect Login.";
                     return response;
                 }
 
@@ -175,9 +175,9 @@ namespace ContactsAPI.Service
             return response;
         }
 
-        public async Task<MessageHelper> ConfirmEmail(string userId, string token)
+        public async Task<MessageHelper> ConfirmEmail(ConfirmEmailDTO dto)
         {
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByIdAsync(dto.UserId);
             if (user == null)
                 return new MessageHelper
                 {
@@ -185,7 +185,7 @@ namespace ContactsAPI.Service
                     Message = "User not Found!"
                 };
 
-            var decodedToken = WebEncoders.Base64UrlDecode(token);
+            var decodedToken = WebEncoders.Base64UrlDecode(dto.Token);
             string normalToken = Encoding.UTF8.GetString(decodedToken);
 
             var result = await _userManager.ConfirmEmailAsync(user, normalToken);
@@ -210,8 +210,6 @@ namespace ContactsAPI.Service
             {
                 MessageHelper result = new();
                 var account = await _userManager.FindByEmailAsync(email);
-
-                // always return ok response to prevent email enumeration
                 if (account == null) return new MessageHelper() { Success = false, Message = "No account found with that email!" };
 
                 var token = await _userManager.GeneratePasswordResetTokenAsync(account);
@@ -228,7 +226,7 @@ namespace ContactsAPI.Service
                 await _mailService.SendEmailAsync(mail);
 
                 result.Success = true;
-                result.Message = "Forgot Password request complete! Verify email!";
+                result.Message = "Forgot Password request complete!";
                 return result;
 
             }

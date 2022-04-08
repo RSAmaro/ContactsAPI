@@ -1,4 +1,5 @@
 ﻿using ContactsAPI.Models;
+using ContactsAPI.Models.Auth;
 using ContactsAPI.Models.User;
 
 namespace ContactsAPI.Controllers
@@ -7,6 +8,6 @@ namespace ContactsAPI.Controllers
     {
         Task<MessageHelper<AuthDTO>> Login(LoginDTO body);
 
-        Task<MessageHelper> ConfirmEmail(string userId, string token);
+        Task<MessageHelper> ConfirmEmail(ConfirmEmailDTO dto);
     }
 }
