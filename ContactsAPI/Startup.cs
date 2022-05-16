@@ -3,6 +3,7 @@ using ContactsAPI.Data;
 using ContactsAPI.Data.Repositories;
 using ContactsAPI.Entities;
 using ContactsAPI.Interfaces;
+using ContactsAPI.Models;
 using ContactsAPI.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -24,7 +25,7 @@ namespace ContactsAPI
             //Para ser possível atualizar as settings em runtime
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddJsonFile("appsettings.Development.json", optional: false, reloadOnChange: true)
                 .AddEnvironmentVariables();
 
             Configuration = builder.Build();
@@ -97,7 +98,7 @@ namespace ContactsAPI
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             }).AddJwtBearer(options =>
             {
-                options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+                options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ClockSkew = TimeSpan.Zero,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(Configuration["Jwt:Key"])),
@@ -171,10 +172,13 @@ namespace ContactsAPI
                 };
             });
 
+            services.Configure<MailSettings>(Configuration.GetSection("MailSettings"));
+
+            services.AddTransient<IMailService, MailService>();
             services.AddTransient<IContactRepository, ContactRepository>();
             services.AddTransient<IContactTypeRepository, ContactTypeRepository>();
             services.AddTransient<IAuthService, AuthService>();
-
+            services.AddTransient<IUserService, UserService>();
             //services.AddTransient<IContactTypeRepository,USER>();
         }
 

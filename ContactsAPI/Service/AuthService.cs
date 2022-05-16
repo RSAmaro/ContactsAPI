@@ -1,8 +1,10 @@
 ﻿using ContactsAPI.Controllers;
 using ContactsAPI.Entities;
 using ContactsAPI.Models;
+using ContactsAPI.Models.Auth;
 using ContactsAPI.Models.User;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -16,6 +18,7 @@ namespace ContactsAPI.Service
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IConfiguration _config;
+        private readonly IMailService _mailService;
 
         private readonly IPasswordHasher<ApplicationUser> _passwordHasher;
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -23,9 +26,10 @@ namespace ContactsAPI.Service
 
         public AuthService(UserManager<ApplicationUser> userManager, IConfiguration config,
             IPasswordHasher<ApplicationUser> passwordHasher, IHttpContextAccessor httpContextAccessor,
-            IOptions<IdentityOptions> optionsAccessor)
+            IOptions<IdentityOptions> optionsAccessor, IMailService mailService)
         {
             _userManager = userManager;
+            _mailService = mailService;
             _config = config;
             _passwordHasher = passwordHasher;
             _httpContextAccessor = httpContextAccessor;
@@ -41,11 +45,10 @@ namespace ContactsAPI.Service
                 var user = await AuthenticateUser(login);
 
                 var userRoles = (await _userManager.GetRolesAsync(user)).ToList();
-
                 if (user == null)
                 {
                     response.Success = false;
-                    response.Message = "Os dados estão incorretos.";
+                    response.Message = "Incorrect Login.";
                     return response;
                 }
 
@@ -73,6 +76,8 @@ namespace ContactsAPI.Service
 
             return response;
         }
+
+
 
         private async Task<ApplicationUser> AuthenticateUser(LoginDTO login)
         {
@@ -168,6 +173,68 @@ namespace ContactsAPI.Service
             }
 
             return response;
+        }
+
+        public async Task<MessageHelper> ConfirmEmail(ConfirmEmailDTO dto)
+        {
+            var user = await _userManager.FindByIdAsync(dto.UserId);
+            if (user == null)
+                return new MessageHelper
+                {
+                    Success = false,
+                    Message = "User not Found!"
+                };
+
+            var decodedToken = WebEncoders.Base64UrlDecode(dto.Token);
+            string normalToken = Encoding.UTF8.GetString(decodedToken);
+
+            var result = await _userManager.ConfirmEmailAsync(user, normalToken);
+
+            if (result.Succeeded)
+                return new MessageHelper
+                {
+                    Success = true,
+                    Message = "Email Confirmed Successfuly!",
+                };
+
+            return new MessageHelper
+            {
+                Success = false,
+                Message = result.Errors.FirstOrDefault()!.Description,
+            };
+        }
+
+        public async Task<MessageHelper> ForgotPassword(string email)
+        {
+            try
+            {
+                MessageHelper result = new();
+                var account = await _userManager.FindByEmailAsync(email);
+                if (account == null) return new MessageHelper() { Success = false, Message = "No account found with that email!" };
+
+                var token = await _userManager.GeneratePasswordResetTokenAsync(account);
+                string url = $"{_config["AppUrl"]}/api/auth/ResetPassword?token={token}&email={email}";
+
+                MailRequest mail = new()
+                {
+                    ToEmail = email,
+                    Subject = "Forgot Password",
+                    Body = "<h1>Forgot Password</h1>" + $"<a href='{url}'>Recover</a>",
+                    Attachments = null
+                };
+
+                await _mailService.SendEmailAsync(mail);
+
+                result.Success = true;
+                result.Message = "Forgot Password request complete!";
+                return result;
+
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
     }
 }

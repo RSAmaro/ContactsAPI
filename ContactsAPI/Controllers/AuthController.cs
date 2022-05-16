@@ -4,6 +4,12 @@ using ContactsAPI.Models.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
+using System.Text;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using ContactsAPI.Service;
+using ContactsAPI.Models.Auth;
 
 namespace ContactsAPI.Controllers
 {
@@ -13,11 +19,15 @@ namespace ContactsAPI.Controllers
     {
         private readonly IAuthService _authService;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IConfiguration _configuration;
+        private readonly IMailService _mailService;
 
-        public AuthController(UserManager<ApplicationUser> userManager, IAuthService authService)
+        public AuthController(UserManager<ApplicationUser> userManager, IAuthService authService, IConfiguration configuration, IMailService mailService)
         {
             _authService = authService;
             _userManager = userManager;
+            _mailService = mailService;
+            _configuration = configuration;
         }
 
         [HttpPost]
@@ -52,8 +62,8 @@ namespace ContactsAPI.Controllers
                     return Ok(result);
                 }
 
-
                 ApplicationUser userInDatabase = await _userManager.FindByEmailAsync(authDTO.Email);
+                
                 if (userInDatabase != null)
                 {
                     result.Success = false;
@@ -64,30 +74,62 @@ namespace ContactsAPI.Controllers
                 userInDatabase = new ApplicationUser
                 {
                     Email = authDTO.Email,
-                    EmailConfirmed = true,
+                    EmailConfirmed = false,
                     UserName = authDTO.Email,
                     Name = authDTO.Username!,
                 };
+                
+                 var resultCreateUserInDatabase = await _userManager.CreateAsync(userInDatabase, authDTO.Password);
 
-                var resultCreateUserInDatabase = await _userManager.CreateAsync(userInDatabase, authDTO.Password);
-                await _userManager.AddToRoleAsync(userInDatabase, Roles.Member.Value );
-                if (!resultCreateUserInDatabase.Succeeded)
+                 await _userManager.AddToRoleAsync(userInDatabase, Roles.Member.Value );
+                 if (!resultCreateUserInDatabase.Succeeded)
+                 {
+                     result.Success = false;
+                     result.Message = "Couldn't assign role to new user!";
+                     return Ok(result);
+                 }
+                
+                var confirmEmailToken = await _userManager.GenerateEmailConfirmationTokenAsync(userInDatabase);
+
+                var encodedEmailToken = Encoding.UTF8.GetBytes(confirmEmailToken);
+                var validEmailToken = WebEncoders.Base64UrlEncode(encodedEmailToken);
+
+                string url = $"{_configuration["FrontendUrl"]}/ConfirmEmailToken?userid={userInDatabase.Id}&token={validEmailToken}";
+                MailRequest mail = new()
                 {
-                    result.Success = false;
-                    result.Message = "Error creating an user!";
-                    return Ok(result);
-                }
+                    ToEmail = userInDatabase.Email,
+                    Subject = "Confirm your Email",
+                    Body = "<h1>Confirm your Email</h1>" + $"<a href='{url}'>Confirm Email</a>",
+                    Attachments = null
+                };
+                
+                await _mailService.SendEmailAsync(mail);
 
                 result.Success = true;
-                result.Message = "User Created!";
+                result.Message = "User Created, please verify email!";
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 result.Success = false;
                 result.Message = "Error creating an user.";
             }
 
             return Ok(result);
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
+        [Route("[action]")]
+        public async Task<MessageHelper> ConfirmEmail(ConfirmEmailDTO dto)
+        {
+            if (string.IsNullOrEmpty(dto.Token) || string.IsNullOrEmpty(dto.UserId))
+                return new MessageHelper { Success = false, Message = "Invalid Parameters" };
+            
+            var result = await _authService.ConfirmEmail(dto);
+            if (result.Success)
+                return new MessageHelper { Success = true, Message = "Confirmed Successfully" };
+
+            return new MessageHelper { Success = false, Message = "Bad Request!" };
         }
 
         [AllowAnonymous]

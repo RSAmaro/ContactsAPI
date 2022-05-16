@@ -243,9 +243,9 @@ namespace ContactsAPI.Data.Repositories
             return result;
         }
 
-        private bool ContactExists(int id)
+       /* private bool ContactExists(int id)
         {
             return _ctx.Contacts.Any(e => e.Id == id);
-        }
+        }*/
     }
 }

@@ -60,5 +60,11 @@ namespace ContactsAPI.Data
 		public DbSet<Contact> Contacts { get; set; }
 
 		public DbSet<ContactType> ContactTypes { get; set; }
+
+		public virtual DbSet<ApplicationUser> ApplicationUsers { get; set; }
+
+		public virtual DbSet<ApplicationRole> ApplicationRoles { get; set; }
+
+		public virtual DbSet<ApplicationUserRole> ApplicationUsersRoles { get; set; }
 	}
 }
